@@ -7,7 +7,7 @@ from datetime import datetime
 from matplotlib import animation
 from scipy.ndimage import gaussian_filter as gf
 
-df = pd.read_csv("tracks/TUM00017237.csv")
+df = pd.read_csv("TUM00017237.csv")
 df=df[["TUM00017237", "19730105" , "TMAX", "150"]]
 df.rename({"TUM00017237":"ID", "19730105":"Date" , "TMAX":"Element", "150":"Data_Value"}, axis=1, inplace=True)
 df["Date"]=pd.to_datetime(df["Date"], format="%Y%m%d")
@@ -66,7 +66,7 @@ tmax2015=tmax2015[tmax2015["Data_Value_x"]>tmax2015["Data_Value_y"]]
 #print(tminother, "\n")
 #print(tmaxother, "\n")
 index=np.arange(1,366)
-plt.figure(facecolor="black")
+fig=plt.figure(facecolor="black")
 plt.style.use("dark_background")
 
 plt.plot(index, tminother["Data_Value"], color="blue", label="Min temperature (°C) values from the years 2005 through 2014")
@@ -77,19 +77,8 @@ plt.scatter(tmax2015["days"], tmax2015["Data_Value_x"], 65, alpha=0.4,color="fuc
 
 plt.scatter(tmin2015["days"], tmin2015["Data_Value_x"], 65, alpha=0.4,color="cyan", label="Record breaking low temperatures (°C) from 2015", marker="v")
 
-"""
-def animate(i):
-    x = index[0:(i-1)]
-    y1 = tminother["Data_Value"][0:(i-1)]
-    y2 = tmaxother["Data_Value"][0:(i-1)]
-    line=(x,y1,y2)
-    p = plt.fill_between(x, y1, y2, facecolor = 'green', alpha=0.1)
-    return line, p
 
-ani=animation.FuncAnimation(fig,animate,interval=25,frames=1000)
-"""
 polygon=plt.fill_between(index,tminother["Data_Value"],tmaxother["Data_Value"],alpha=0.1)
-# https://stackoverflow.com/questions/76271774/cmap-parameter-in-ax-fill-between
 
 plt.title("Change in Temperature (°C) in Denizli, Turkey")
 plt.xlabel("Months of the year")
@@ -102,6 +91,7 @@ plt.gca().set_xticklabels(month_abbr[1:])
 plt.gca().spines["top"].set_visible(False)
 plt.gca().spines["right"].set_visible(False)
 
+
 verts=np.vstack([p.vertices for p in polygon.get_paths()])
 ymin,ymax=verts[:,1].min(), verts[:,1].max()
 
@@ -109,4 +99,5 @@ imdata=np.array([np.interp(np.linspace(ymin,ymax,1000), [y1i,y2i],np.arange(2)) 
 
 gradient= plt.imshow(imdata,cmap="turbo", aspect="auto", origin="lower", extent=[index.min(),index.max(), ymin,ymax])
 gradient.set_clip_path(polygon.get_paths()[0], transform=plt.gca().transData)
+
 plt.show()
