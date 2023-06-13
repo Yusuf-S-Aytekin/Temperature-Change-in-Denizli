@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import re
 from calendar import month_abbr
 from datetime import datetime
+import warnings
+warnings.filterwarnings("ignore")
 
 df = pd.read_csv("TUM00017237.csv")
 df=df[["TUM00017237", "19730105" , "TMAX", "150"]]
