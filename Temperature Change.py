@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import re
 from calendar import month_abbr
 from datetime import datetime
+from scipy.ndimage import gaussian_filter as gf
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -12,10 +13,12 @@ df=df[["TUM00017237", "19730105" , "TMAX", "150"]]
 df.rename({"TUM00017237":"ID", "19730105":"Date" , "TMAX":"Element", "150":"Data_Value"}, axis=1, inplace=True)
 df["Date"]=pd.to_datetime(df["Date"], format="%Y%m%d")
 
+
 df["Data_Value"] = df.loc[:,"Data_Value"]/10
 
 tmin=df[df["Element"]=="TMIN"]
 tmax=df[df["Element"]=="TMAX"]
+
 
 tmin["Date"].replace(["2008-02-29","2012-02-29"], np.NaN, inplace=True)
 tmin.dropna(inplace=True)
@@ -33,6 +36,7 @@ tmin["day"]=pd.DatetimeIndex(tmin.index).day
 tmax["day"]=pd.DatetimeIndex(tmax.index).day
 tmin["month"]=pd.DatetimeIndex(tmin.index).month
 tmax["month"]=pd.DatetimeIndex(tmax.index).month
+
 
 tmin2015 = tmin[(pd.to_datetime(tmin.index) >="2015") & (pd.to_datetime(tmin.index) <"2016")]
 tminother=tmin[(pd.to_datetime(tmin.index) <"2015") & (pd.to_datetime(tmin.index) >="2005")]
@@ -55,6 +59,7 @@ tmin2015=tmin2015[tmin2015["Data_Value_x"]<tmin2015["Data_Value_y"]]
 tmax2015=tmax2015.merge(tmaxother, on=["month","day"])
 tmax2015=tmax2015[tmax2015["Data_Value_x"]>tmax2015["Data_Value_y"]]
 
+
 index=np.arange(1,366)
 fig=plt.figure(facecolor="black")
 plt.style.use("dark_background")
@@ -62,8 +67,10 @@ plt.style.use("dark_background")
 plt.plot(index, tminother["Data_Value"], color="blue", label="Min temperature (°C) values from the years 2005 through 2014")
 plt.plot(index, tmaxother["Data_Value"], color="red", label="Max temperature (°C) values from the years 2005 through 2014")
 
-plt.scatter(tmax2015["days"], tmax2015["Data_Value_x"], 65, alpha=0.4,color="fuchsia", label="Record breaking high temperatures (°C) from 2015", marker="^")
+plt.scatter(tmax2015["days"], tmax2015["Data_Value_x"], 65, alpha=0.4,color="orange", label="Record breaking high temperatures (°C) from 2015", marker="^")
+
 plt.scatter(tmin2015["days"], tmin2015["Data_Value_x"], 65, alpha=0.4,color="cyan", label="Record breaking low temperatures (°C) from 2015", marker="v")
+
 
 polygon=plt.fill_between(index,tminother["Data_Value"],tmaxother["Data_Value"],alpha=0.1)
 
@@ -78,10 +85,12 @@ plt.gca().set_xticklabels(month_abbr[1:])
 plt.gca().spines["top"].set_visible(False)
 plt.gca().spines["right"].set_visible(False)
 
+
 verts=np.vstack([p.vertices for p in polygon.get_paths()])
 ymin,ymax=verts[:,1].min(), verts[:,1].max()
 
-imdata=np.array([np.interp(np.linspace(ymin,ymax,1000), [y1i,y2i],np.arange(2)) for y1i,y2i in zip(tminother["Data_Value"],tmaxother["Data_Value"])]).T
+imdata=np.array([np.interp(np.linspace(ymin,ymax,1000), [y1i,y2i],np.arange(2))
+                 for y1i,y2i in zip(gf(tminother["Data_Value"], 4, mode="nearest"),gf(tmaxother["Data_Value"], 4, mode="nearest"))]).T
 
 gradient= plt.imshow(imdata,cmap="turbo", aspect="auto", origin="lower", extent=[index.min(),index.max(), ymin,ymax])
 gradient.set_clip_path(polygon.get_paths()[0], transform=plt.gca().transData)
